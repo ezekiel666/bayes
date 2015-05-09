@@ -1,5 +1,3 @@
-require(caret)
-#install.packages("caret", dep = TRUE)
 
 readData <- function(s=1000) {
   dataset <- read.csv("spambase/spambase.data",header=FALSE,sep=",")
@@ -10,12 +8,11 @@ readData <- function(s=1000) {
   #http://en.wikipedia.org/wiki/Discretization_of_continuous_features
   
   dataset$spam <- as.factor(dataset$spam) # encode spam vector as factor (category)
-  sample <- dataset[sample(nrow(dataset), s),]
+  dataset_sample <- dataset[sample(nrow(dataset), s),]
   
   #split 0.7/0.3 keeping $spam distribution
-  trainIndex <- createDataPartition(sample$spam, p = .7, list = FALSE, times = 1)
-  dataTrain <- sample[ trainIndex,]
-  dataTest  <- sample[-trainIndex,]
-  
+  split = sample(2, size = s, replace=TRUE, prob = c(0.7,0.3))
+  dataTrain <- dataset_sample[ split==1,]
+  dataTest  <- dataset_sample[ split==2,]
   list(dataTrain = dataTrain, dataTest = dataTest)
 }
