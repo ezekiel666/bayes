@@ -9,7 +9,7 @@ readData <- function(s=1000) {
   #TODO: attribute discretization
   #http://en.wikipedia.org/wiki/Discretization_of_continuous_features
   
-  dataset$spam <- as.factor(dataset$spam)
+  dataset$spam <- as.factor(dataset$spam) # encode spam vector as factor (category)
   sample <- dataset[sample(nrow(dataset), s),]
   
   #split 0.7/0.3 keeping $spam distribution
