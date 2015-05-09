@@ -17,5 +17,5 @@ readData <- function(s=1000) {
   dataTrain <- sample[ trainIndex,]
   dataTest  <- sample[-trainIndex,]
   
-  return(list(dataTrain=dataTrain, dataTest=dataTest))
+  list(dataTrain = dataTrain, dataTest = dataTest)
 }

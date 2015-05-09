@@ -5,5 +5,5 @@ require(e1071)
 
 #http://en.wikibooks.org/wiki/Data_Mining_Algorithms_In_R/Classification/Na%C3%AFve_Bayes
 
-#classifier<-naiveBayes(...) 
-#table(predict(classifier, ...), ...)
+#model<-naiveBayes(...) 
+#table(predict(model, ...), ...)
