@@ -44,8 +44,9 @@ aode.default <- function(x, y, laplace = 1, ...) {
   }
   
   #create tables  
+  vfreq <- lapply(x, table)
   tables1 <- lapply(x, est1)
-  tables2 <- lapply2(x, est2)
+  tables2 <- lapply2(x, est2)  
   
   #fixing names
   for(i in 1:length(tables1)) {
@@ -59,8 +60,9 @@ aode.default <- function(x, y, laplace = 1, ...) {
   
   #returning model
   structure(
-    list(tables1 = tables1,
-         tables2 = tables2,
+    list(vfreq = vfreq,
+         tables1 = tables1,
+         tables2 = tables2,         
          levels = levels(y),
          call   = call
     ),
@@ -72,29 +74,72 @@ aode.default <- function(x, y, laplace = 1, ...) {
 #model - model
 #newdata - attributes matrix with new data (column names are matched against the training data ones)
 #c - {class, raw} indicates if return only class with maximum propability (default) or set with all classes/probabilities
-#m - frequency lower limit (default=1)
-#eps, threshold - in case you would like replace values smaller than <= eps with threshold
+#m - frequency lower limit (including, default=1)
 #returns predicted classes
-aode.predict <- function(model, newdata, type = c("class", "raw"), m=1, eps = 0, threshold = 0.001, ...) {
-  type <- match.arg(type) #matches against specified arguments
-  class <- attr(model, "class") 
-  if(is.null(class) || class != "aode") { stop("invalid model") }  
-  
+predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
+  type <- match.arg(type) #matches against specified arguments  
   newdata <- as.data.frame(newdata)
   attribs <- match(names(model$tables1), names(newdata)) #vector of the positions of (first) matches of its first argument in its second
-  newdata <- data.matrix(newdata)
+  newdata <- data.matrix(newdata) #numeric matrix
+  
+  #TODO: if no such i, that F(vi) >= m AODE defaults to NB (assign NA)
   
   L <- sapply(1:nrow(newdata), function(i) {
-    ndata <- newdata[i, ]
-    print(ndata)
+    ndata <- newdata[i, ]    
     #logarithm cannot be applied, because of sum (it makes computations more numerically unstable)  
+    #we compute in rows for each class
+    L <- apply(sapply(seq_along(attribs),
+      function(v) {
+        nd <- ndata[attribs[v]]
+        if(is.na(nd)) {
+          #it's missing value in test set
+          rep(0, length(model$levels))
+        } else {
+          freq <- model$vfreq[[v]][nd]
+          if(is.na(freq) || freq < m) {
+            #it's missing value in training set or freq is under the limit
+            rep(0, length(model$levels))
+          } else {        
+            model$tables1[[v]][, nd]
+            #TODO: multiply by attr pair probabilities + smoothing
+          }
+        }
+      }),1,sum)
+    
+      if (type == "class")
+        L
+      else {
+        #probabilities normalization
+        sapply(L, function(lp) {
+          lp/sum(lp)
+          lp[is.na(lp)] <- 0
+        })
+      }
   })
   
-#   if (type == "class")
-#     factor(model$levels[apply(L, 2, which.max)], levels = model$levels)
-#   else t(L)
+  if (type == "class")
+    factor(model$levels[apply(L, 2, which.max)], levels = model$levels)
+  else t(L)
 }
 
+#printing
+print.aode <- function(x, ...) {
+  cat("\nAODE\n\n")
+  cat("Call:\n")
+  print(x$call)
+  
+  cat("\nLevels:\n")
+  print(x$levels)
+  
+  cat("\nVariable frequencies:\n")
+  print(x$vfreq)
+
+  cat("\nConditional probabilities:\n")
+  print(x$tables1)
+  
+  cat("\nConditional probabilities of pairs of attributes:\n")
+  print(x$tables2)
+}
 
 #invocation
 
@@ -110,9 +155,10 @@ y <- dataTrain$spam
 
 #model<-aode(x,y) 
 
-a <- matrix(as.factor(1:6), nrow = 2, ncol = 3) #only discrete values
+a <- matrix(as.factor(1:6), nrow = 2, ncol = 3) #discrete values
 colnames(a) <- c("a1", "a2", "a3")
 b <- as.factor(c(0,1))
 
 model <- aode(a,b)
-predicted <- aode.predict(model, a)
+predicted <- predict(model, a)
+predictedraw <- predict(model, a, type = "raw")
