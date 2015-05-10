@@ -4,23 +4,11 @@ require(ape)
 ## TODO
 ## - classification
 
-test_row = function(x, conditions) {
-  retVal = 1;
-  lapply(conditions, function(cond){
-    if(cond$val == x[cond$pos] ){
-      retval <<- retVal & 1
-    } else {
-      retVal <<- retVal & 0
-    }
-  })
-  return(retVal);
-}
-
 ## x is training dataset. Assumption was made that class attribute is the last attribute in this dataset.
 tan = function(x, ...)
   UseMethod("tan")
 
-tan.default = function(x, ...) {
+tan.default = function(data, ...) {
   conditionalMutualInformation = function( a_i, pos_i, a_j, pos_j, a_k, pos_k) {
     retVal = 0;
     partial = 0;
@@ -58,25 +46,39 @@ tan.default = function(x, ...) {
     return(retVal);
   }
   getParents = function(maximalSpanningTree) {
-    ## always root node is attr1
+    ## first attr is always node
     listOfParents = c()
-    
+    parents = c( (ncol(maximalSpanningTree) + 1) )
     for(i in 1:ncol(maximalSpanningTree) ) {
-      parents = c( (ncol(maximalSpanningTree) + 1) ) ## class attribute as a parent every other attribute
-      for(j in 1:i ) {
-        if(maximalSpanningTree[j,i] == 1) {
-          parents = c(parents, j)      ## parent node
-          break;
-        }
-      }
       listOfParents = c(listOfParents, list(parents))
     }
-    
-    listOfParents = c(listOfParents, list() ) # class desn't have any parents
-    
+    listOfParents = updateChildrens(maximalSpanningTree, listOfParents, 1)$l
     return(listOfParents)
   }
-
+  updateChildrens = function(maximalSpanningTree, listOfParents, parent) {
+    for(i in 1:ncol(maximalSpanningTree) ) {
+      if( maximalSpanningTree[parent,i] == 1 ) {
+        listOfParents[[i]] = c(listOfParents[[i]], parent)
+        maximalSpanningTree[parent,i] = maximalSpanningTree[i,parent] = 0
+        update = updateChildrens(maximalSpanningTree, listOfParents, i)
+        maximalSpanningTree = update$mat
+        listOfParents = update$l
+      }
+    }
+    return(list(l = listOfParents, mat = maximalSpanningTree))
+  }
+  test_row = function(x, conditions) {
+    retVal = 1;
+    lapply(conditions, function(cond){
+      if(cond$val == x[cond$pos] ){
+        retval <<- retVal & 1
+      } else {
+        retVal <<- retVal & 0
+      }
+    })
+    return(retVal);
+  }
+  
   data[] = lapply(data, factor)
   attributes = lapply(data, levels)
   att_number = length(attributes)
@@ -88,7 +90,7 @@ tan.default = function(x, ...) {
         mutualInformationMatrix[i,j] = 
           mutualInformationMatrix[j,i] = conditionalMutualInformation( attributes[[i]], i,
                                                                        attributes[[j]], j,
-                                                                       attributes[[att_number]], att_number) # class attribute
+                                                                       attributes[[att_number]], att_number)
       }
     }
   }
@@ -99,21 +101,24 @@ tan.default = function(x, ...) {
     else
       return(1+abs(x))
   }))
-  
-  for(i in 1:nrow(maximalSpanningTree)) {
-    for(j in 1:i) {
-        maximalSpanningTree[i,j] = 0
-    }
-  }
 
   parents = getParents(maximalSpanningTree)
-  model = list(att = attributes, par = parents)
-  return(model)
+  
+  
+  structure(list(att = attributes, par = parents, call = call), class="tan")
 }
 
-tan.predict = function(model, vector, ...) {
-  print("tan.predict")
+predict.tan = function(object, newdata, type = c("class","raw"), ...) {
+  print("predict.tan")
+  
 }
 
-data = read.csv("test_data.csv",header=TRUE,sep=";")
-model = tan(data)
+set.seed(1235)
+sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3))
+trainData <- iris[sam==1,]
+testData <- iris[sam==2,]
+
+test_data = read.csv("test_data.csv",header=TRUE,sep=";")
+model = tan(test_data)
+predicted = predict(model, trainData)
+
