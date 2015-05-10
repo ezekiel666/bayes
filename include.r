@@ -1,4 +1,4 @@
-
+#reads spambase data and makes preprocessing
 readData <- function(s=1000) {
   dataset <- read.csv("spambase/spambase.data",header=FALSE,sep=",")
   names <- read.csv("spambase/names",header=FALSE,sep=",")
@@ -8,11 +8,25 @@ readData <- function(s=1000) {
   #http://en.wikipedia.org/wiki/Discretization_of_continuous_features
   
   dataset$spam <- as.factor(dataset$spam) # encode spam vector as factor (category)
-  dataset_sample <- dataset[sample(nrow(dataset), s),]
+  datasetSample <- dataset[sample(nrow(dataset), s),]
   
   #split 0.7/0.3 keeping $spam distribution
   split = sample(2, size = s, replace=TRUE, prob = c(0.7,0.3))
-  dataTrain <- dataset_sample[ split==1,]
-  dataTest  <- dataset_sample[ split==2,]
+  dataTrain <- datasetSample[split==1,]
+  dataTest  <- datasetSample[split==2,]
   list(dataTrain = dataTrain, dataTest = dataTest)
+}
+
+#computes given function for each pair of matrix column 
+#(twice: we could optimize it, but it's easier not to for indexing)
+#and returns outputs as list
+lapply2 <- function(x, fun) {
+  list <- list()  
+  
+  for(i in colnames(x)) {
+    for(j in colnames(x)) {
+      list[[i]][[j]] <- fun(x[,i],x[,j])      
+    }
+  }  
+  return(list)
 }

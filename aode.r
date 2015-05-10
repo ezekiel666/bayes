@@ -5,18 +5,6 @@ source("include.r")
 aode <- function(x, ...)
   UseMethod("aode") #generic function @see methods(aode)
 
-apply2 <- function(x, fun) {
-  list <- list()  
-  
-  for(i in colnames(x)) {
-    for(j in colnames(x)) {
-      list[[i]][[j]] <- fun(x[,i],x[,j])      
-    }
-  }  
-  return(list)
-}
-
-
 #training
 #x - attributes matrix
 #y - class vector
@@ -27,6 +15,7 @@ aode.default <- function(x, y, laplace = 1, ...) {
   Yname <- deparse(substitute(y)) #getting y name
   x <- as.data.frame(x)
   
+  #type check
   check <-function(var)
     if(is.numeric(var)) {
       stop("variable cannot be numeric - only discrete attributes are allowed")
@@ -34,50 +23,43 @@ aode.default <- function(x, y, laplace = 1, ...) {
   
   lapply(x, check)
   
-  #estimation
+  #estimation functions
   est1 <- function(var) {
     tab1 <- table(y, var) #count class frequencies for a given variable
-    (tab1 + laplace) / (rowSums(tab1) + laplace * nlevels(var))  
-    #print("tab1")
-    #print(tab1) #[y, var]
-    return(tab1)
+    tab1 / length(y) #there is no need to smoothe here!     
   }
   
   est2 <- function(var1, var2) {  
-    vc <- table(var1, y) #count class frequencies for a given variable
-    #print("vc")
-    #print(vc) #[var1, y]
-    
+    vc <- table(var1, y) #count class frequencies for a given variable   
     tab2 <- table(var1, var2, y) #count variable pair frequency for a given class
-    #print("tab2 before")
-    #print(tab2) #[var1, var2, y]
-    
-    # for each tuple(var1,y) ...
+        
     for(f in dimnames(tab2)$var1){
       for(s in dimnames(tab2)$y){
-        #print(paste("(",f,",",s,")", sep=""))
-        tab2[f,,s] <- (tab2[f,,s] + laplace) / (vc[f,s] + laplace * nlevels(var1))
+        # for each tuple(var1,y) ...
+        tab2[f,,s] <- (tab2[f,,s] + laplace) / (vc[f,s] + laplace * nlevels(var2)) #we smoothe here!
       }    
-    }
+    }  
     
-    #print("tab2 after")
-    #print(tab2)
-    return(tab2)
+    tab2
   }
   
-  cfreq <- table(y) #count class frequencies
-  names(dimnames(cfreq)) <- Yname 
-  
-  #create tables
+  #create tables  
   tables1 <- lapply(x, est1)
-  #for(i in 1:length(tables1)) { # y -> yname
-  #  names(dimnames(tables1[[i]])) <- c(Yname, colnames(x)[i])
-  #}
-  tables2 <- apply2(x, est2)
+  tables2 <- lapply2(x, est2)
   
+  #fixing names
+  for(i in 1:length(tables1)) {
+    names(dimnames(tables1[[i]])) <- c(Yname, colnames(x)[i])
+  }
+  for(i in 1:length(tables2)) {
+    for(j in 1:length(tables2[[i]])) {
+      names(dimnames(tables2[[i]][[j]])) <- c(colnames(x)[i], colnames(x)[j], Yname)
+    }
+  }
+  
+  #returning model
   structure(
-    list(cfreq = cfreq,
-         tables1 = tables1,
+    list(tables1 = tables1,
          tables2 = tables2,
          levels = levels(y),
          call   = call
@@ -88,11 +70,29 @@ aode.default <- function(x, y, laplace = 1, ...) {
 
 #predicting
 #model - model
-#vector - vector
+#newdata - attributes matrix with new data (column names are matched against the training data ones)
+#c - {class, raw} indicates if return only class with maximum propability (default) or set with all classes/probabilities
 #m - frequency lower limit (default=1)
-#returns predicted class for a given vector
-aode.predict <- function(model, vector, m=1, ...) {
+#eps, threshold - in case you would like replace values smaller than <= eps with threshold
+#returns predicted classes
+aode.predict <- function(model, newdata, type = c("class", "raw"), m=1, eps = 0, threshold = 0.001, ...) {
+  type <- match.arg(type) #matches against specified arguments
+  class <- attr(model, "class") 
+  if(is.null(class) || class != "aode") { stop("invalid model") }  
   
+  newdata <- as.data.frame(newdata)
+  attribs <- match(names(model$tables1), names(newdata)) #vector of the positions of (first) matches of its first argument in its second
+  newdata <- data.matrix(newdata)
+  
+  L <- sapply(1:nrow(newdata), function(i) {
+    ndata <- newdata[i, ]
+    print(ndata)
+    #logarithm cannot be applied, because of sum (it makes computations more numerically unstable)  
+  })
+  
+#   if (type == "class")
+#     factor(model$levels[apply(L, 2, which.max)], levels = model$levels)
+#   else t(L)
 }
 
 
@@ -110,8 +110,9 @@ y <- dataTrain$spam
 
 #model<-aode(x,y) 
 
-a <- matrix(as.factor(1:6), nrow = 2, ncol = 3)
-colnames(a) <- c("first", "second", "thrid")
+a <- matrix(as.factor(1:6), nrow = 2, ncol = 3) #only discrete values
+colnames(a) <- c("a1", "a2", "a3")
 b <- as.factor(c(0,1))
 
-model<-aode(a,b,1) 
+model <- aode(a,b)
+predicted <- aode.predict(model, a)
