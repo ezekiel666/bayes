@@ -2,7 +2,6 @@ source("include.r")
 require(ape)
 
 ## TODO
-## - m-estimation !
 ## - classification
 
 test_row = function(x, conditions) {
@@ -32,20 +31,24 @@ tan.default = function(x, ...) {
         for(k in 1:length(a_k)) {
           a_k_condition = list(pos = pos_k, val = a_k[k])
           
-          a_i_j_k_condition = list( a_i_condition, a_j_condition, a_k_condition)
-          a_k_cons_condition = list(a_k_condition)
-          a_i_ant_condition = list(a_i_condition, a_k_condition)
-          a_j_ant_condition = list(a_j_condition, a_k_condition)
+          a_i_j_k_condition   = list( a_i_condition, a_j_condition, a_k_condition)
+          a_i_ant_condition   = list( a_i_condition, a_k_condition)
+          a_j_ant_condition   = list( a_j_condition, a_k_condition)
+          a_k_cons_condition  = list( a_k_condition)
           
-          a_i_j_k_number = sum( apply(data, 1, test_row, conditions = a_i_j_k_condition) )
+          a_i_j_k_number  = sum( apply(data, 1, test_row, conditions = a_i_j_k_condition) )
+          a_i_j_m_est     = length( a_i) * length( a_j)
+          a_i_j_k_m_est   = a_i_j_m_est * length( a_k)
+          a_i_ant_number  = sum( apply(data, 1, test_row, conditions = a_i_ant_condition) )
+          a_i_ant_m_est   = length( a_i)
+          a_j_ant_number  = sum( apply(data, 1, test_row, conditions = a_j_ant_condition) )
+          a_j_ant_m_est   = length( a_j)
           a_k_cons_number = sum( apply(data, 1, test_row, conditions = a_k_cons_condition) )
-          a_i_ant_prob = sum( apply(data, 1, test_row, conditions = a_i_ant_condition) )
-          a_j_ant_prob = sum( apply(data, 1, test_row, conditions = a_j_ant_condition) )
           
-          a_i_ant_prob = a_i_ant_prob / a_k_cons_number
-          a_j_ant_prob = a_j_ant_prob / a_k_cons_number
-          a_i_j_ant_prob = a_i_j_k_number / a_k_cons_number
-          sum_prob = a_i_j_k_number / nrow(data)
+          a_i_ant_prob    = ( a_i_ant_number + 1 ) / ( a_k_cons_number + a_i_ant_m_est )
+          a_j_ant_prob    = ( a_j_ant_number + 1 ) / ( a_k_cons_number + a_j_ant_m_est )
+          a_i_j_ant_prob  = ( a_i_j_k_number + 1 ) / ( a_k_cons_number + a_i_j_m_est )
+          sum_prob        = ( a_i_j_k_number + 1 ) / ( nrow(data)      + a_i_j_k_m_est )
 
           partial = sum_prob * log2( a_i_j_ant_prob / ( a_i_ant_prob * a_j_ant_prob ) )          
           retVal = retVal + partial
@@ -73,8 +76,7 @@ tan.default = function(x, ...) {
     
     return(listOfParents)
   }
-  
-  
+
   data[] = lapply(data, factor)
   attributes = lapply(data, levels)
   att_number = length(attributes)
@@ -90,7 +92,7 @@ tan.default = function(x, ...) {
       }
     }
   }
-   
+  
   maximalSpanningTree = mst(apply(mutualInformationMatrix, 1:2, function(x) {
     if(x>=0)
       return(1/(1+x))
@@ -103,7 +105,7 @@ tan.default = function(x, ...) {
         maximalSpanningTree[i,j] = 0
     }
   }
-  
+
   parents = getParents(maximalSpanningTree)
   model = list(att = attributes, par = parents)
   return(model)
