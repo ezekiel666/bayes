@@ -16,11 +16,6 @@ aode.default <- function(x, y, laplace = 1, ...) {
   x <- as.data.frame(x)
   
   #type check
-  check <-function(var)
-    if(is.numeric(var)) {
-      stop("variable cannot be numeric - only discrete attributes are allowed")
-    }
-  
   lapply(x, check)
   
   #estimation functions
@@ -64,62 +59,11 @@ aode.default <- function(x, y, laplace = 1, ...) {
          tables1 = tables1,
          tables2 = tables2,         
          levels = levels(y),
-         call   = call
+         call   = call,
+         laplace = laplace
     ),
     class = "aode"
   )
-}
-
-#predicting
-#model - model
-#newdata - attributes matrix with new data (column names are matched against the training data ones)
-#c - {class, raw} indicates if return only class with maximum propability (default) or set with all classes/probabilities
-#m - frequency lower limit (including, default=1)
-#returns predicted classes
-predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
-  type <- match.arg(type) #matches against specified arguments  
-  newdata <- as.data.frame(newdata)
-  attribs <- match(names(model$tables1), names(newdata)) #vector of the positions of (first) matches of its first argument in its second
-  newdata <- data.matrix(newdata) #numeric matrix
-  
-  #TODO: if no such i, that F(vi) >= m AODE defaults to NB (assign NA)
-  
-  L <- sapply(1:nrow(newdata), function(i) {
-    ndata <- newdata[i, ]    
-    #logarithm cannot be applied, because of sum (it makes computations more numerically unstable)  
-    #we compute in rows for each class
-    L <- apply(sapply(seq_along(attribs),
-      function(v) {
-        nd <- ndata[attribs[v]]
-        if(is.na(nd)) {
-          #it's missing value in test set
-          rep(0, length(model$levels))
-        } else {
-          freq <- model$vfreq[[v]][nd]
-          if(is.na(freq) || freq < m) {
-            #it's missing value in training set or freq is under the limit
-            rep(0, length(model$levels))
-          } else {        
-            model$tables1[[v]][, nd]
-            #TODO: multiply by attr pair probabilities + smoothing
-          }
-        }
-      }),1,sum)
-    
-      if (type == "class")
-        L
-      else {
-        #probabilities normalization
-        sapply(L, function(lp) {
-          lp/sum(lp)
-          lp[is.na(lp)] <- 0
-        })
-      }
-  })
-  
-  if (type == "class")
-    factor(model$levels[apply(L, 2, which.max)], levels = model$levels)
-  else t(L)
 }
 
 #printing
@@ -131,9 +75,12 @@ print.aode <- function(x, ...) {
   cat("\nLevels:\n")
   print(x$levels)
   
+  cat("\nLaplace coefficient:\n")
+  print(x$laplace)
+  
   cat("\nVariable frequencies:\n")
   print(x$vfreq)
-
+  
   cat("\nConditional probabilities:\n")
   print(x$tables1)
   
@@ -141,24 +88,99 @@ print.aode <- function(x, ...) {
   print(x$tables2)
 }
 
+#predicting
+#model - model
+#newdata - attributes matrix with new data (column names are matched against the training data ones)
+#c - {class, raw} indicates if return only class with maximum propability (default) or set with all classes/probabilities
+#m - frequency lower limit (including, default=1)
+#returns predicted classes
+#in case frequency condition is to strict or whole vector consists of new/unknown values, NA is returned
+predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
+  type <- match.arg(type) #matches against specified arguments  
+  df <- as.data.frame(newdata) #to match names
+  attribs <- match(names(model$tables1), names(df)) #vector of the positions of (first) matches of its first argument in its second    
+  attribs <- attribs[!is.na(attribs)]   
+  lapply(newdata[,attribs], check) #type check
+  
+  L <- sapply(1:nrow(newdata), function(i) {
+    ndata <- newdata[i, ]    
+    #logarithm cannot be applied, because of sum (it makes computations more numerically unstable)  
+    #we compute in rows for each class
+    L <- apply(sapply(seq_along(attribs),
+      function(v) {
+        nd_v <- ndata[attribs[v]]        
+        if(is.na(nd_v)) {
+          #it's missing value in test set
+          rep(0, length(model$levels))
+        } else {          
+          freq_v <- model$vfreq[[v]][nd_v]          
+          if(is.na(freq_v) || freq_v < m) {            
+            #it's missing value in training set or freq_v is under the limit
+            rep(0, length(model$levels))
+          } else {        
+            model$tables1[[v]][,nd_v] * apply(sapply(seq_along(attribs),
+              function(u) {    
+                nd_u <- ndata[attribs[u]]
+                if(is.na(nd_u)) {
+                  #it's missing value in test set
+                  rep(0, length(model$levels))
+                } else {
+                  freq_u <- model$vfreq[[u]][nd_u]
+                  if(is.na(freq_u)) {
+                    #it's missing value in training set
+                    lc <- model$laplace / model$laplace * length(model$vfreq[[u]])
+                    if(is.na(lc)) { lc = 0 }
+                    rep(lc, length(model$levels)) #we smoothe here!
+                  } else {
+                    model$tables2[[v]][[u]][nd_v,nd_u,]
+                  }
+                }
+              }),1,prod)                    
+          }
+        }
+      }),1,sum)
+    
+      #we assign NA if there is zero for all classes
+      s <- sum(L)
+      if(s == 0) {
+        rep(NA, length(model$levels))
+      } else {
+        if(type == "class") {
+          L
+        } else {
+          #probabilities normalization
+          L/s      
+        }
+      }        
+  })
+  
+  if(type == "class") { 
+    factor(model$levels[apply(L, 2, function(v) { ifelse(is.na(v[1]), NA, which.max(v)) })], levels = model$levels) 
+  } else { 
+    t(L) 
+  }
+}
+
 #invocation
 
-mydata <- readData(10)
-
-#print(mydata)
-#listing output in console: mydata
-#clearing console: CTRL + E + L
-
-dataTrain <- mydata$dataTrain
-x <- dataTrain[,-which(names(dataTrain) %in% c("spam"))] #omit $spam column
-y <- dataTrain$spam
-
+#mydata <- readData(10)
+#dataTrain <- mydata$dataTrain
+#x <- dataTrain[,-which(names(dataTrain) %in% c("spam"))] #omit $spam column
+#y <- dataTrain$spam
 #model<-aode(x,y) 
 
-a <- matrix(as.factor(1:6), nrow = 2, ncol = 3) #discrete values
+a <- matrix(c("a","b", "c", "d", "e", "f"), nrow = 2, ncol = 3, byrow = TRUE) #discrete values
 colnames(a) <- c("a1", "a2", "a3")
 b <- as.factor(c(0,1))
 
 model <- aode(a,b)
 predicted <- predict(model, a)
 predictedraw <- predict(model, a, type = "raw")
+
+mpredicted <- predict(model, a, m=100)
+mpredictedraw <- predict(model, a, type = "raw", m=100)
+
+na <- matrix(c("a","b", "c", "x", "y", "z"), nrow = 2, ncol = 3, byrow = TRUE) #discrete values
+colnames(na) <- c("a1", "a2", "a4")
+napredicted <- predict(model, na)
+napredictedraw <- predict(model, na, type = "raw")
