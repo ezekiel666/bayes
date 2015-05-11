@@ -78,6 +78,58 @@ tan.default = function(data, ...) {
     })
     return(retVal);
   }
+  computeConditionalProbabilities = function(data, parents, attributes) {
+    conditionalProbabilities = c()
+    
+    for(i in 1:(length(attributes) - 1) ) {
+      parent    = parents[[i]]
+      ndim = c(length(attributes[[i]]))
+      
+      for( p in 1:length(parent) )
+        ndim = c( ndim , length(attributes[[p]]) )
+      
+      probabilities = array(0, dim = ndim)
+      
+      for(a_i in 1:length(attributes[[i]]) ) {
+        a_i_condition = list(pos = i, val = attributes[[i]][a_i] )
+        
+        for(c in 1:length(attributes[[ parent[1] ]]) ) { ## class is always first on parent list
+          c_condition = list(pos = parent[1], val = attributes[[ parent[1] ]][c] )
+          
+          if( i > 1 ) {
+            for(a_j in 1:length(attributes[[ parent[2] ]]) ) { ## another att is always second on parent list
+              a_j_condition = list(pos = parent[2], val = attributes[[ parent[2] ]][a_j] )
+              
+              a_i_c_a_j_condition = list( a_i_condition, c_condition, a_j_condition )
+              c_a_j_condition     = list( c_condition, a_j_condition )
+              
+              a_i_c_a_j_number    = sum( apply(data, 1, test_row, conditions = a_i_c_a_j_condition) )
+              c_a_j_number        = sum( apply(data, 1, test_row, conditions = c_a_j_condition) )
+              
+              m = length(attributes[[i]])
+              
+              probabilities[a_i,c,a_j] = (a_i_c_a_j_number + 1) / (c_a_j_number + m)
+            }
+          } else {
+            
+            a_i_c_condition       = list( a_i_condition, c_condition)
+            c_condition           = list( c_condition)
+            
+            a_i_c_number          = sum( apply(data, 1, test_row, conditions = a_i_c_condition) )
+            c_number              = sum( apply(data, 1, test_row, conditions = c_condition) )
+            
+            m = length(attributes[[i]])
+            
+            probabilities[a_i, c] = ( a_i_c_number + 1) / (c_number + m)
+            
+          }
+        }
+      }
+      conditionalProbabilities = c(conditionalProbabilities, list(probabilities))
+    }
+    
+    return(conditionalProbabilities) 
+  }
   
   data[] = lapply(data, factor)
   attributes = lapply(data, levels)
@@ -101,11 +153,13 @@ tan.default = function(data, ...) {
     else
       return(1+abs(x))
   }))
-
   parents = getParents(maximalSpanningTree)
+  conditionalProbabilities = computeConditionalProbabilities(data, parents, attributes)
   
-  
-  structure(list(att = attributes, par = parents, call = call), class="tan")
+  structure(list(attributes = attributes, 
+                 parents = parents, 
+                 conditionalProbabilities = conditionalProbabilities), 
+            class="tan")
 }
 
 predict.tan = function(object, newdata, type = c("class","raw"), ...) {
@@ -119,6 +173,6 @@ trainData <- iris[sam==1,]
 testData <- iris[sam==2,]
 
 test_data = read.csv("test_data.csv",header=TRUE,sep=";")
-model = tan(test_data)
+model = tan(head(testData,10))
 predicted = predict(model, trainData)
 
