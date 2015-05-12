@@ -1,11 +1,6 @@
-#rm(list=ls())
 source("include.r")
 require(ape)
 
-## TODO
-## - classification
-
-## x is training dataset. Assumption was made that class attribute is the last attribute in this dataset.
 tan = function(x, ...)
   UseMethod("tan")
 
@@ -189,7 +184,6 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
   print("predict.tan")
   type <- match.arg(type)
   newdata[] = lapply(newdata, factor)
-  
   outputVector = apply(newdata, 1, function(x, type, object) {
     classProb = c()
     for(cls in 1:length(object$attributes[[length(object$attributes)]]) ) { ## for each class value
@@ -209,25 +203,41 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
         }
         
       }
-      print(probability)
       classProb = c(classProb, probability)
     }
     return(classProb)
   }, type = type, object = object )
   
-  return(outputVector)
+  classes  = object$attributes[[ length(object$attributes) ]]
+  lvlNames = levels(classes)
+  
+  if( type == "class" ) { # return array of factors
+    retVal = c()
+    for( i in 1:ncol(outputVector) ) {
+      idx = which.max(outputVector[,i])
+      retVal = c(retVal, classes[idx])
+    }
+    retVal = factor(retVal, levels = 1:length(classes), labels = lvlNames)
+  } else { # return matrix which col names coresponds to class names
+    retVal = matrix(0, nrow = ncol(outputVector), ncol = nrow(outputVector),
+                    dimnames = list(NULL, lvlNames))
+    for( i in 1:ncol(outputVector) ) {
+      for( j in 1:nrow(outputVector) ) {
+        retVal[i,j] = outputVector[j,i]
+      }
+    }
+    
+  }
+  
+  return(retVal)
 }
 
-set.seed(1235)
-sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
-trainData <- iris[sam==1,]
-testData <- iris[sam==2,]
+## example usage
+#set.seed(1235)
+#sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
+#trainData <- iris[sam==1,]
+#testData <- iris[sam==2,]
 
-test_data = read.csv("test_data.csv",header=TRUE,sep=";")
 #model = tan(testData)
-predicted = predict(model, testData, type = "class")
-
-library(e1071)
-nb = naiveBayes(Species ~ . , data = testData)
-cla = predict(nb, testData, type="class")
-raw = predict(nb, testData, type="raw")
+#predicted = predict(model, testData, type = "class")
+#predicted_raw = predict(model, testData, type = "raw")
