@@ -1,3 +1,4 @@
+#rm(list=ls())
 source("include.r")
 require(ape)
 
@@ -78,19 +79,19 @@ tan.default = function(data, ...) {
     })
     return(retVal);
   }
-  computeConditionalProbabilities = function(data, parents, attributes) {
+  computeConditionalProbabilities = function(data, parents, len) {
     conditionalProbabilities = c()
     
-    for(i in 1:(length(attributes) - 1) ) {
+    for(i in 1:( length(attributes) - 1) ) {
       parent    = parents[[i]]
       ndim = c(length(attributes[[i]]))
       
       for( p in 1:length(parent) )
-        ndim = c( ndim , length(attributes[[p]]) )
+        ndim = c( ndim , length( attributes[[ parent[p] ]] ) )
       
       probabilities = array(0, dim = ndim)
       
-      for(a_i in 1:length(attributes[[i]]) ) {
+      for(a_i in 1:length( attributes[[i]] ) ) {
         a_i_condition = list(pos = i, val = attributes[[i]][a_i] )
         
         for(c in 1:length(attributes[[ parent[1] ]]) ) { ## class is always first on parent list
@@ -128,11 +129,22 @@ tan.default = function(data, ...) {
       conditionalProbabilities = c(conditionalProbabilities, list(probabilities))
     }
     
-    return(conditionalProbabilities) 
+    ## class probabilities
+    probabilities = array(0, dim = c(length(attributes[[length(attributes)]])) )
+    for( c in 1:length(attributes[[length(attributes)]]) ) {
+      c_condition = list( pos = length(attributes), val = attributes[[ parent[1] ]][c] )
+      c_condition = list( c_condition)
+      c_number    = sum( apply(data, 1, test_row, conditions = c_condition) )
+      c_prob      = c_number / nrow(data)
+      probabilities[c] = c_prob
+    }
+    
+    return(c(conditionalProbabilities, list(probabilities))) 
   }
   
   data[] = lapply(data, factor)
   attributes = lapply(data, levels)
+  attributes[] = lapply(attributes, factor)
   att_number = length(attributes)
   mutualInformationMatrix = matrix(data = 0, nrow = att_number - 1, ncol = att_number - 1)
   
@@ -157,22 +169,65 @@ tan.default = function(data, ...) {
   conditionalProbabilities = computeConditionalProbabilities(data, parents, attributes)
   
   structure(list(attributes = attributes, 
-                 parents = parents, 
+                 parents = parents,
                  conditionalProbabilities = conditionalProbabilities), 
             class="tan")
 }
 
 predict.tan = function(object, newdata, type = c("class","raw"), ...) {
-  print("predict.tan")
+  attValIdx = function(attVal, attArray) {
+    idx = 0
+    for(i in 1:length(attArray) ) {
+      if(attVal == attArray[i])
+        idx = i
+    }
+    cond = (idx > 0)
+    stopifnot( cond )
+    return(idx)
+  }
   
+  print("predict.tan")
+  type <- match.arg(type)
+  newdata[] = lapply(newdata, factor)
+  
+  outputVector = apply(newdata, 1, function(x, type, object) {
+    classProb = c()
+    for(cls in 1:length(object$attributes[[length(object$attributes)]]) ) { ## for each class value
+      
+      probability = 1;
+      for(argAttr in 1:(length(x) - 1) ) {
+        parents = object$parents[[argAttr]]
+        att1ValIdx = attValIdx(x[[argAttr]], object$attributes[[argAttr]] )
+        
+        if(length(parents) == 1) {
+          probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls]
+        } else if(length(parents) == 2) {
+          att2ValIdx = attValIdx( x[[ parents[2] ]], object$attributes[[ parents[2] ]] )
+          probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls,att2ValIdx]
+        } else {
+          stop("ERROR")
+        }
+        
+      }
+      print(probability)
+      classProb = c(classProb, probability)
+    }
+    return(classProb)
+  }, type = type, object = object )
+  
+  return(outputVector)
 }
 
 set.seed(1235)
-sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3))
+sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
 trainData <- iris[sam==1,]
 testData <- iris[sam==2,]
 
 test_data = read.csv("test_data.csv",header=TRUE,sep=";")
-model = tan(head(testData,10))
-predicted = predict(model, trainData)
+#model = tan(testData)
+predicted = predict(model, testData, type = "class")
 
+library(e1071)
+nb = naiveBayes(Species ~ . , data = testData)
+cla = predict(nb, testData, type="class")
+raw = predict(nb, testData, type="raw")
