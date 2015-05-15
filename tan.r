@@ -9,32 +9,41 @@ tan.default = function(data, ...) {
     retVal = 0;
     partial = 0;
     for(i in 1:length(a_i)){
-      a_i_condition = list(pos = pos_i, val = a_i[i])
+      a_i_condition = list(pos = pos_i, val = a_i[i], fun = function(x,y){ !is.na(x) && x == y })
+      a_i_exist = list(pos = pos_i, val = NA, fun = function(x,y){ !is.na(x) })
       for(j in 1:length(a_j)){
-        a_j_condition = list(pos = pos_j, val = a_j[j])
+        a_j_condition = list(pos = pos_j, val = a_j[j], fun = function(x,y){ !is.na(x) && x == y })
+        a_j_exist = list(pos = pos_j, val = NA, fun = function(x,y){ !is.na(x) })
         for(k in 1:length(a_k)) {
-          a_k_condition = list(pos = pos_k, val = a_k[k])
+          a_k_condition = list(pos = pos_k, val = a_k[k], fun = function(x,y){ !is.na(x) && x == y })
+          a_k_exist = list(pos = pos_k, val = NA, fun = function(x,y){ !is.na(x) })
           
-          a_i_j_k_condition   = list( a_i_condition, a_j_condition, a_k_condition)
-          a_i_ant_condition   = list( a_i_condition, a_k_condition)
-          a_j_ant_condition   = list( a_j_condition, a_k_condition)
-          a_k_cons_condition  = list( a_k_condition)
+          # Probabilities computing
           
-          a_i_j_k_number  = sum( apply(data, 1, test_row, conditions = a_i_j_k_condition) )
-          a_i_j_m_est     = length( a_i) * length( a_j)
-          a_i_j_k_m_est   = a_i_j_m_est * length( a_k)
-          a_i_ant_number  = sum( apply(data, 1, test_row, conditions = a_i_ant_condition) )
-          a_i_ant_m_est   = length( a_i)
-          a_j_ant_number  = sum( apply(data, 1, test_row, conditions = a_j_ant_condition) )
-          a_j_ant_m_est   = length( a_j)
-          a_k_cons_number = sum( apply(data, 1, test_row, conditions = a_k_cons_condition) )
+          # sum_prob = P(A_i, A_j, A_k) = |T a_i, a_j, a_k | / |T a_i=?, a_j=?, a_k=?|
+          a_i_j_k_cond        = sum( apply(data, 1, test_row, conditions = list( a_i_condition, a_j_condition, a_k_condition)) )
+          a_i_j_k_exist       = sum( apply(data, 1, test_row, conditions = list( a_i_exist, a_j_exist, a_k_exist)))
+          sum_prob            = a_i_j_k_cond / a_i_j_k_exist
           
-          a_i_ant_prob    = ( a_i_ant_number + 1 ) / ( a_k_cons_number + a_i_ant_m_est )
-          a_j_ant_prob    = ( a_j_ant_number + 1 ) / ( a_k_cons_number + a_j_ant_m_est )
-          a_i_j_ant_prob  = ( a_i_j_k_number + 1 ) / ( a_k_cons_number + a_i_j_m_est )
-          sum_prob        = ( a_i_j_k_number + 1 ) / ( nrow(data)      + a_i_j_k_m_est )
+          # a_i_j_prob = P(A_i, A_j | A_k) = |T a_i, a_j, a_k | / |T a_i=?, a_j=?, a_k|
+          #a_i_j_k_cond      = sum( apply(data, 1, test_row, conditions = list( a_i_condition, a_j_condition, a_k_condition)) )
+          a_i_j_exist_a_k_cond= sum( apply(data, 1, test_row, conditions = list(a_i_exist, a_j_exist, a_k_condition)))
+          a_i_j_m_est         = length( a_i) * length( a_j)
+          a_i_j_prob          = ( a_i_j_k_cond + 1 ) / ( a_i_j_exist_a_k_cond + a_i_j_m_est )
+          
+          # a_i_prob = P(A_i | A_k) = |T a_i, a_k | / |T a_i=?, a_k|
+          a_i_k_cond          = sum( apply(data, 1, test_row, conditions = list( a_i_condition, a_k_condition)) )
+          a_i_m_est           = length( a_i)
+          a_i_exist_a_k_cond  = sum( apply(data, 1, test_row, conditions = list(a_i_exist, a_k_condition)))
+          a_i_prob            = ( a_i_k_cond + 1 ) / ( a_i_exist_a_k_cond + a_i_m_est )
+          
+          # a_j_prob = P(A_j | A_k) = |T a_j, a_k | / |T a_j=?, a_k|
+          a_j_k_cond          = sum( apply(data, 1, test_row, conditions = list( a_j_condition, a_k_condition)) )
+          a_j_m_est           = length( a_j)
+          a_j_exist_a_k_cond  = sum( apply(data, 1, test_row, conditions = list(a_j_exist, a_k_condition)))
+          a_j_prob            = ( a_j_k_cond + 1 ) / ( a_j_exist_a_k_cond + a_j_m_est)
 
-          partial = sum_prob * log2( a_i_j_ant_prob / ( a_i_ant_prob * a_j_ant_prob ) )          
+          partial = sum_prob * log2( a_i_j_prob / ( a_i_prob * a_j_prob ) )          
           retVal = retVal + partial
         }
       }
@@ -66,7 +75,7 @@ tan.default = function(data, ...) {
   test_row = function(x, conditions) {
     retVal = 1;
     lapply(conditions, function(cond){
-      if(cond$val == x[cond$pos] ){
+      if(cond$fun(x[cond$pos], cond$val) ){
         retval <<- retVal & 1
       } else {
         retVal <<- retVal & 0
@@ -74,7 +83,7 @@ tan.default = function(data, ...) {
     })
     return(retVal);
   }
-  computeConditionalProbabilities = function(data, parents, len) {
+  computeConditionalProbabilities = function(data, parents, attributes) {
     conditionalProbabilities = c()
     
     for(i in 1:( length(attributes) - 1) ) {
@@ -87,37 +96,28 @@ tan.default = function(data, ...) {
       probabilities = array(0, dim = ndim)
       
       for(a_i in 1:length( attributes[[i]] ) ) {
-        a_i_condition = list(pos = i, val = attributes[[i]][a_i] )
+        a_i_condition = list(pos = i, val = attributes[[i]][a_i], fun = function(x,y){ !is.na(x) && x == y })
+        a_i_exist     = list(pos = i, val = NA, fun = function(x,y){ !is.na(x) })
         
         for(c in 1:length(attributes[[ parent[1] ]]) ) { ## class is always first on parent list
-          c_condition = list(pos = parent[1], val = attributes[[ parent[1] ]][c] )
+          c_condition = list(pos = parent[1], val = attributes[[ parent[1] ]][c], fun = function(x,y){ !is.na(x) && x == y })
           
           if( i > 1 ) {
             for(a_j in 1:length(attributes[[ parent[2] ]]) ) { ## another att is always second on parent list
-              a_j_condition = list(pos = parent[2], val = attributes[[ parent[2] ]][a_j] )
-              
-              a_i_c_a_j_condition = list( a_i_condition, c_condition, a_j_condition )
-              c_a_j_condition     = list( c_condition, a_j_condition )
-              
-              a_i_c_a_j_number    = sum( apply(data, 1, test_row, conditions = a_i_c_a_j_condition) )
-              c_a_j_number        = sum( apply(data, 1, test_row, conditions = c_a_j_condition) )
-              
+              a_j_condition = list(pos = parent[2], val = attributes[[ parent[2] ]][a_j], fun = function(x,y){ !is.na(x) && x == y })
+
+              a_i_c_a_j_cond      = sum( apply(data, 1, test_row, conditions = list( a_i_condition, c_condition, a_j_condition )))
+              a_i_exist_c_a_j_cond= sum( apply(data, 1, test_row, conditions = list( a_i_exist, c_condition, a_j_condition)))
               m = length(attributes[[i]])
               
-              probabilities[a_i,c,a_j] = (a_i_c_a_j_number + 1) / (c_a_j_number + m)
+              probabilities[a_i,c,a_j] = (a_i_c_a_j_cond + 1) / (a_i_exist_c_a_j_cond + m)
             }
           } else {
-            
-            a_i_c_condition       = list( a_i_condition, c_condition)
-            c_condition           = list( c_condition)
-            
-            a_i_c_number          = sum( apply(data, 1, test_row, conditions = a_i_c_condition) )
-            c_number              = sum( apply(data, 1, test_row, conditions = c_condition) )
-            
+            a_i_c_cond            = sum( apply(data, 1, test_row, conditions = list( a_i_condition, c_condition)))
+            a_i_exist_c_cond      = sum( apply(data, 1, test_row, conditions = list( a_i_exist, c_condition)))                       
             m = length(attributes[[i]])
             
-            probabilities[a_i, c] = ( a_i_c_number + 1) / (c_number + m)
-            
+            probabilities[a_i, c] = ( a_i_c_cond + 1) / (a_i_exist_c_cond + m)
           }
         }
       }
@@ -126,15 +126,27 @@ tan.default = function(data, ...) {
     
     ## class probabilities
     probabilities = array(0, dim = c(length(attributes[[length(attributes)]])) )
-    for( c in 1:length(attributes[[length(attributes)]]) ) {
-      c_condition = list( pos = length(attributes), val = attributes[[ parent[1] ]][c] )
+    
+    c_exist = list(pos = length(attributes), val = NA, fun = function(x,y){ !is.na(x) })
+    c_exist = list( c_exist )
+    c_exist_num = sum( apply(data, 1, test_row, conditions = c_exist) )
+    
+    for( c in 1:length( attributes[[length(attributes)]] ) ) {
+      c_condition = list(pos = length(attributes), val = attributes[[length(attributes)]][c], fun = function(x,y){ !is.na(x) && x == y })
       c_condition = list( c_condition)
-      c_number    = sum( apply(data, 1, test_row, conditions = c_condition) )
-      c_prob      = c_number / nrow(data)
+      c_cond_num  = sum( apply(data, 1, test_row, conditions = c_condition))
+      c_prob      = c_cond_num / c_exist_num
       probabilities[c] = c_prob
     }
     
     return(c(conditionalProbabilities, list(probabilities))) 
+  }
+  getModes = function(data) {
+    modes = lapply(data, function(x) {
+      newData = na.omit(x)
+      Mode(newData)
+    })
+    return(modes)
   }
   
   data[] = lapply(data, factor)
@@ -162,10 +174,12 @@ tan.default = function(data, ...) {
   }))
   parents = getParents(maximalSpanningTree)
   conditionalProbabilities = computeConditionalProbabilities(data, parents, attributes)
+  modes = getModes(data)
   
   structure(list(attributes = attributes, 
                  parents = parents,
-                 conditionalProbabilities = conditionalProbabilities), 
+                 conditionalProbabilities = conditionalProbabilities,
+                 modes = modes),
             class="tan")
 }
 
@@ -180,28 +194,32 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
     stopifnot( cond )
     return(idx)
   }
-  
-  print("predict.tan")
-  type <- match.arg(type)
+
+  type = match.arg(type)
   newdata[] = lapply(newdata, factor)
   outputVector = apply(newdata, 1, function(x, type, object) {
     classProb = c()
     for(cls in 1:length(object$attributes[[length(object$attributes)]]) ) { ## for each class value
       
-      probability = 1;
+      probability = object$conditionalProbabilities[[length(object$attributes)]][cls];
       for(argAttr in 1:(length(x) - 1) ) {
-        parents = object$parents[[argAttr]]
-        att1ValIdx = attValIdx(x[[argAttr]], object$attributes[[argAttr]] )
-        
-        if(length(parents) == 1) {
-          probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls]
-        } else if(length(parents) == 2) {
-          att2ValIdx = attValIdx( x[[ parents[2] ]], object$attributes[[ parents[2] ]] )
-          probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls,att2ValIdx]
-        } else {
-          stop("ERROR")
+        if( !is.na(x[[argAttr]]) ) {
+          parents = object$parents[[argAttr]]
+          att1ValIdx = attValIdx(x[[argAttr]], object$attributes[[argAttr]] )
+          
+          if(length(parents) == 1) {
+            probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls]
+          } else if(length(parents) == 2) {
+            if( !is.na(x[[ parents[2] ]]) ) {
+              att2ValIdx = attValIdx( x[[ parents[2] ]], object$attributes[[ parents[2] ]] )
+            } else {
+              att2ValIdx = attValIdx( object$modes[[ parents[2] ]], object$attributes[[ parents[2] ]] )
+            }
+            probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls,att2ValIdx]
+          } else {
+            stop("ERROR")
+          }
         }
-        
       }
       classProb = c(classProb, probability)
     }
@@ -233,11 +251,11 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
 }
 
 ## example usage
-#set.seed(1235)
-#sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
-#trainData <- iris[sam==1,]
-#testData <- iris[sam==2,]
+set.seed(1235)
+sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
+trainData <- iris[sam==1,]
+testData <- iris[sam==2,]
 
-#model = tan(testData)
-#predicted = predict(model, testData, type = "class")
-#predicted_raw = predict(model, testData, type = "raw")
+model = tan(testData)
+predicted_class = predict(model, testData, type = "class")
+predicted_raw = predict(model, testData, type = "raw")
