@@ -51,17 +51,17 @@ readData <- function(s=1000, maxValues = 10) {
   list(dataTrain = dataTrain, dataTest = dataTest)
 }
 
-#computes given function for each pair of matrix column 
+#computes given function for each pair of matrix column
 #(twice: we could optimize it, but it's easier not to for indexing)
 #and returns outputs as list
 lapply2 <- function(x, fun) {
-  list <- list()  
-  
+  list <- list()
+
   for(i in colnames(x)) {
     for(j in colnames(x)) {
-      list[[i]][[j]] <- fun(x[,i],x[,j])      
+      list[[i]][[j]] <- fun(x[,i],x[,j])
     }
-  }  
+  }
   return(list)
 }
 
