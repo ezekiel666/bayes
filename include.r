@@ -1,15 +1,49 @@
+discretizate <- function(data, maxValues = 10) {
+  last <- function(v) {
+    return (v[length(v)]);
+  }
+
+  if (length(unique(data)) > maxValues) {
+    valuesCount = length(data);
+    levelStep = valuesCount / maxValues;
+    sorted = sort(data);
+
+    thresholdsArray = vector(mode="numeric", length=0);
+
+    for (thresholdLevel in lapply(seq(from = levelStep, to = valuesCount - levelStep, by = levelStep), round)) {
+      threshold = sorted[thresholdLevel];
+      if (!length(thresholdsArray) || threshold > last(thresholdsArray)) {
+        thresholdsArray = append(thresholdsArray, threshold);
+      }
+    }
+
+    getThreshold <- function(val) {
+      for (t in 1:length(thresholdsArray)) {
+        if (val <= thresholdsArray[t]) {
+          return (t);
+        }
+      }
+      return (length(thresholdsArray) + 1);
+    }
+
+    data = sapply(data, getThreshold);
+  }
+  return (data);
+}
+
 #reads spambase data and makes preprocessing
-readData <- function(s=1000) {
+readData <- function(s=1000, maxValues = 10) {
   dataset <- read.csv("spambase/spambase.data",header=FALSE,sep=",")
   names <- read.csv("spambase/names",header=FALSE,sep=",")
   names(dataset) <- sapply((1:nrow(names)),function(i) toString(names[i,1]))
-  
-  #TODO: attribute discretization
-  #http://en.wikipedia.org/wiki/Discretization_of_continuous_features
-  
+
+  for (i in 1:length(dataset)) {
+    dataset[[i]] = discretizate(dataset[[i]], maxValues);
+  }
+
   dataset$spam <- as.factor(dataset$spam) # encode spam vector as factor (category)
   datasetSample <- dataset[sample(nrow(dataset), s),]
-  
+
   #split 0.7/0.3 keeping $spam distribution
   split = sample(2, size = s, replace=TRUE, prob = c(0.7,0.3))
   dataTrain <- datasetSample[split==1,]
