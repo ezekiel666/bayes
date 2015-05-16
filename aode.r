@@ -102,37 +102,39 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
   attribs <- attribs[!is.na(attribs)]   
   lapply(newdata[,attribs], check) #type check
   
-  L <- sapply(1:nrow(newdata), function(i) {
+  L <- sapply(1:nrow(newdata), function(i) {    
     ndata <- newdata[i, ]    
     #logarithm cannot be applied, because of sum (it makes computations more numerically unstable)  
     #we compute in rows for each class
     L <- apply(sapply(seq_along(attribs),
       function(v) {
-        nd_v <- ndata[attribs[v]]        
+        a_v <- attribs[v]
+        nd_v <- ndata[[a_v]]        
         if(is.na(nd_v)) {
           #it's missing value in test set
           rep(0, length(model$levels))
-        } else {          
-          freq_v <- model$vfreq[[v]][nd_v]          
+        } else {                    
+          freq_v <- model$vfreq[[a_v]][nd_v]          
           if(is.na(freq_v) || freq_v < m) {            
             #it's missing value in training set or freq_v is under the limit
             rep(0, length(model$levels))
           } else {        
-            model$tables1[[v]][,nd_v] * apply(sapply(seq_along(attribs),
-              function(u) {    
-                nd_u <- ndata[attribs[u]]
+            model$tables1[[a_v]][,nd_v] * apply(sapply(seq_along(attribs),
+              function(u) {
+                a_u <- attribs[u]
+                nd_u <- ndata[[a_u]]
                 if(is.na(nd_u)) {
                   #it's missing value in test set
                   rep(0, length(model$levels))
                 } else {
-                  freq_u <- model$vfreq[[u]][nd_u]
+                  freq_u <- model$vfreq[[a_u]][nd_u]
                   if(is.na(freq_u)) {
                     #it's missing value in training set
-                    lc <- model$laplace / model$laplace * length(model$vfreq[[u]])
+                    lc <- model$laplace / model$laplace * length(model$vfreq[[a_u]])
                     if(is.na(lc)) { lc = 0 }
                     rep(lc, length(model$levels)) #we smoothe here!
                   } else {
-                    model$tables2[[v]][[u]][nd_v,nd_u,]
+                    model$tables2[[a_v]][[a_u]][nd_v,nd_u,]
                   }
                 }
               }),1,prod)                    
@@ -163,24 +165,30 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
 
 #invocation
 
-#mydata <- readData(10)
+#example usage
+set.seed(1235)
+sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
+firis <- iris
+firis[] <- lapply(firis, as.factor)
+dataTrain <- firis[sam==1,]
+dataTest <- firis[sam==2,]
+
+x <- dataTrain[,-which(names(dataTrain) %in% c("Species"))]
+y <- dataTrain$Species
+model = aode(x,y)
+z <- dataTest[,-which(names(dataTest) %in% c("Species"))]
+predicted_class = predict(model, z, type = "class")
+predicted_raw = predict(model, z, type = "raw")
+comparsion <- table(predicted_class, dataTest$Species)
+
+#spambase usage
+#mydata <- readData()
 #dataTrain <- mydata$dataTrain
-#x <- dataTrain[,-which(names(dataTrain) %in% c("spam"))] #omit $spam column
+#dataTest <- mydata$dataTest
+#x <- dataTrain[,-which(names(dataTrain) %in% c("spam"))]
 #y <- dataTrain$spam
-#model<-aode(x,y) 
-
-a <- matrix(c("a","b", "c", "d", "e", "f"), nrow = 2, ncol = 3, byrow = TRUE) #discrete values
-colnames(a) <- c("a1", "a2", "a3")
-b <- as.factor(c(0,1))
-
-model <- aode(a,b)
-predicted <- predict(model, a)
-predictedraw <- predict(model, a, type = "raw")
-
-mpredicted <- predict(model, a, m=100)
-mpredictedraw <- predict(model, a, type = "raw", m=100)
-
-na <- matrix(c("a","b", "c", "x", "y", "z"), nrow = 2, ncol = 3, byrow = TRUE) #discrete values
-colnames(na) <- c("a1", "a2", "a4")
-napredicted <- predict(model, na)
-napredictedraw <- predict(model, na, type = "raw")
+#model <- aode(x,y) 
+#z <- dataTest[,-which(names(dataTest) %in% c("spam"))]
+#predicted_class = predict(model, z, type = "class")
+#predicted_raw = predict(model, z, type = "raw")
+#comparsion <- table(predicted_class, dataTest$spam)
