@@ -2,6 +2,7 @@ source("include.r")
 
 #based on e1071::naiveBayes
 
+#it treats numeric values as discrete
 aode <- function(x, ...)
   UseMethod("aode") #generic function @see methods(aode)
 
@@ -15,9 +16,6 @@ aode.default <- function(x, y, laplace = 1, ...) {
   Yname <- deparse(substitute(y)) #getting y name
   x <- as.data.frame(x)
   
-  #type check
-  lapply(x, check)
-  
   #estimation functions
   est1 <- function(var) {
     tab1 <- table(y, var) #count class frequencies for a given variable
@@ -30,8 +28,8 @@ aode.default <- function(x, y, laplace = 1, ...) {
         
     for(f in dimnames(tab2)$var1){
       for(s in dimnames(tab2)$y){
-        # for each tuple(var1,y) ...
-        tab2[f,,s] <- (tab2[f,,s] + laplace) / (vc[f,s] + laplace * nlevels(var2)) #we smoothe here!
+        # for each tuple(var1,y) ...        
+        tab2[f,,s] <- (tab2[f,,s] + laplace) / (vc[f,s] + laplace * nlevels(as.factor(var2))) #we smoothe here!        
       }    
     }  
     
@@ -99,8 +97,7 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
   type <- match.arg(type) #matches against specified arguments  
   df <- as.data.frame(newdata) #to match names
   attribs <- match(names(model$tables1), names(df)) #vector of the positions of (first) matches of its first argument in its second    
-  attribs <- attribs[!is.na(attribs)]   
-  lapply(newdata[,attribs], check) #type check
+  attribs <- attribs[!is.na(attribs)]
   
   L <- sapply(1:nrow(newdata), function(i) {    
     ndata <- newdata[i, ]    
@@ -109,7 +106,7 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
     L <- apply(sapply(seq_along(attribs),
       function(v) {
         a_v <- attribs[v]
-        nd_v <- ndata[[a_v]]        
+        nd_v <- as.character(ndata[[a_v]])        
         if(is.na(nd_v)) {
           #it's missing value in test set
           rep(0, length(model$levels))
@@ -122,7 +119,7 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
             model$tables1[[a_v]][,nd_v] * apply(sapply(seq_along(attribs),
               function(u) {
                 a_u <- attribs[u]
-                nd_u <- ndata[[a_u]]
+                nd_u <- as.character(ndata[[a_u]])
                 if(is.na(nd_u)) {
                   #it's missing value in test set
                   rep(0, length(model$levels))
@@ -134,16 +131,16 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
                     if(is.na(lc)) { lc = 0 }
                     rep(lc, length(model$levels)) #we smoothe here!
                   } else {
-                    model$tables2[[a_v]][[a_u]][nd_v,nd_u,]
+                    model$tables2[[a_v]][[a_u]][nd_v,nd_u,]                    
                   }
                 }
-              }),1,prod)                    
+              }),1,prod)              
           }
         }
       }),1,sum)
     
       #we assign NA if there is zero for all classes
-      s <- sum(L)
+      s <- sum(L)      
       if(s == 0) {
         rep(NA, length(model$levels))
       } else {
@@ -166,13 +163,20 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
 #invocation
 
 #example usage
+# a <- data.frame(1:2, 3:4, 5:6)
+# names(a) <- c("a1", "a2", "a3")
+# b <- as.factor(c(0,1))
+# object <- aode(a, b) 
+# newdata <- data.frame(c(1,7), c(3,8), c(5,9))
+# names(newdata) <- c("a2", "a1", "a3")
+# predicted_class <- predict(object, newdata, type = "class")
+# predicted_raw <- predict(object, newdata, type = "raw")
+
+#iris usage
 set.seed(1235)
 sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
-firis <- iris
-firis[] <- lapply(firis, as.factor)
-dataTrain <- firis[sam==1,]
-dataTest <- firis[sam==2,]
-
+dataTrain <- iris[sam==1,]
+dataTest <- iris[sam==2,]
 x <- dataTrain[,-which(names(dataTrain) %in% c("Species"))]
 y <- dataTrain$Species
 model = aode(x,y)
@@ -182,13 +186,13 @@ predicted_raw = predict(model, z, type = "raw")
 comparsion <- table(predicted_class, dataTest$Species)
 
 #spambase usage
-#mydata <- readData()
-#dataTrain <- mydata$dataTrain
-#dataTest <- mydata$dataTest
-#x <- dataTrain[,-which(names(dataTrain) %in% c("spam"))]
-#y <- dataTrain$spam
-#model <- aode(x,y) 
-#z <- dataTest[,-which(names(dataTest) %in% c("spam"))]
-#predicted_class = predict(model, z, type = "class")
-#predicted_raw = predict(model, z, type = "raw")
-#comparsion <- table(predicted_class, dataTest$spam)
+# mydata <- readData()
+# dataTrain <- mydata$dataTrain
+# dataTest <- mydata$dataTest
+# x <- dataTrain[,-which(names(dataTrain) %in% c("spam"))]
+# y <- dataTrain$spam
+# model <- aode(x,y) 
+# z <- dataTest[,-which(names(dataTest) %in% c("spam"))]
+# predicted_class = predict(model, z, type = "class")
+# predicted_raw = predict(model, z, type = "raw")
+# comparsion <- table(predicted_class, dataTest$spam)

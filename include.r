@@ -65,12 +65,6 @@ lapply2 <- function(x, fun) {
   return(list)
 }
 
-#check
-check <-function(var)
-  if(is.numeric(var)) {
-    stop("variable cannot be numeric - only discrete attributes are allowed")
-  }
-
 #Mode function for factor datatype
 Mode <- function(x) {
   ux <- unique(x)
