@@ -32,7 +32,7 @@ discretizate <- function(data, maxValues = 10) {
 }
 
 #reads spambase data and makes preprocessing
-readData <- function(s=1000, maxValues = 10) {
+readData <- function(s=0, maxValues = 10) {
   dataset <- read.csv("spambase/spambase.data",header=FALSE,sep=",")
   names <- read.csv("spambase/names",header=FALSE,sep=",")
   names(dataset) <- sapply((1:nrow(names)),function(i) toString(names[i,1]))
@@ -42,12 +42,17 @@ readData <- function(s=1000, maxValues = 10) {
   }
 
   dataset$spam <- as.factor(dataset$spam) # encode spam vector as factor (category)
-  datasetSample <- dataset[sample(nrow(dataset), s),]
+
+  if (s > 0) {
+    dataset <- dataset[sample(nrow(dataset), s),];
+  } else {
+    s = nrow(dataset);
+  }
 
   #split 0.7/0.3 keeping $spam distribution
   split = sample(2, size = s, replace=TRUE, prob = c(0.7,0.3))
-  dataTrain <- datasetSample[split==1,]
-  dataTest  <- datasetSample[split==2,]
+  dataTrain <- dataset[split==1,]
+  dataTest  <- dataset[split==2,]
   list(dataTrain = dataTrain, dataTest = dataTest)
 }
 
