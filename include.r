@@ -28,7 +28,7 @@ discretizate <- function(data, maxValues = 10) {
 
     data = sapply(data, getThreshold);
   }
-  return (data);
+  return (as.factor(data));
 }
 
 #reads spambase data and makes preprocessing
@@ -37,7 +37,7 @@ readData <- function(s=0, maxValues = 10) {
   names <- read.csv("spambase/names",header=FALSE,sep=",")
   names(dataset) <- sapply((1:nrow(names)),function(i) toString(names[i,1]))
 
-  for (i in 1:length(dataset)) {
+  for (i in 1:(length(dataset)-1)) {
     dataset[[i]] = discretizate(dataset[[i]], maxValues);
   }
 
