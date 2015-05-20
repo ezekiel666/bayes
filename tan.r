@@ -195,8 +195,8 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
       if(attVal == attArray[i])
         idx = i
     }
-    cond = (idx > 0)
-    stopifnot( cond )
+#     cond = (idx > 0)
+#     stopifnot( cond )
     return(idx)
   }
 
@@ -213,17 +213,34 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
           att1ValIdx = attValIdx(x[[argAttr]], object$attributes[[argAttr]] )
 
           if(length(parents) == 1) {
-            probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls]
+            probabilities = object$conditionalProbabilities[[argAttr]][,cls]
           } else if(length(parents) == 2) {
             if( !is.na(x[[ parents[2] ]]) ) {
               att2ValIdx = attValIdx( x[[ parents[2] ]], object$attributes[[ parents[2] ]] )
             } else {
               att2ValIdx = attValIdx( object$modes[[ parents[2] ]], object$attributes[[ parents[2] ]] )
             }
-            probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls,att2ValIdx]
+
+            # There was no conditional attribute with that value in training data
+            if (att2ValIdx > 0) {
+              probabilities = object$conditionalProbabilities[[argAttr]][,cls,att2ValIdx];
+            } else if (!is.null(dim(object$conditionalProbabilities[[argAttr]][,cls,]))) {
+              probabilities = apply(object$conditionalProbabilities[[argAttr]][,cls,], 1, max)
+            } else {
+              probabilities = object$conditionalProbabilities[[argAttr]][,cls,]
+            }
           } else {
             stop("ERROR")
           }
+
+          # There was no such attribute with that value in training data
+          if (att1ValIdx > 0) {
+            attrProb = probabilities[att1ValIdx];
+          } else {
+            attrProb = max(probabilities);
+          }
+
+          probability = probability * attrProb;
         }
       }
       classProb = c(classProb, probability)
@@ -245,8 +262,9 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
     retVal = matrix(0, nrow = ncol(outputVector), ncol = nrow(outputVector),
                     dimnames = list(NULL, lvlNames))
     for( i in 1:ncol(outputVector) ) {
+      s = sum(outputVector[,i])
       for( j in 1:nrow(outputVector) ) {
-        retVal[i,j] = outputVector[j,i]
+        retVal[i,j] = outputVector[j,i]/s
       }
     }
 
@@ -256,11 +274,11 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
 }
 
 ## example usage
-set.seed(1235)
-sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
-trainData <- iris[sam==1,]
-testData <- iris[sam==2,]
-
-model = tan(testData)
-predicted_class = predict(model, testData, type = "class")
-predicted_raw = predict(model, testData, type = "raw")
+# set.seed(1235)
+# sam <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3) )
+# trainData <- iris[sam==1,]
+# testData <- iris[sam==2,]
+#
+# model = tan(testData)
+# predicted_class = predict(model, testData, type = "class")
+# predicted_raw = predict(model, testData, type = "raw")
