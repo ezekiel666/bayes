@@ -28,7 +28,7 @@ discretizate <- function(data, maxValues = 10) {
 
     data = sapply(data, getThreshold);
   }
-  return (as.factor(data));
+  return (data);
 }
 
 #reads spambase data and makes preprocessing

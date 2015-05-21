@@ -195,8 +195,6 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
       if(attVal == attArray[i])
         idx = i
     }
-#     cond = (idx > 0)
-#     stopifnot( cond )
     return(idx)
   }
 
@@ -208,39 +206,23 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
 
       probability = object$conditionalProbabilities[[length(object$attributes)]][cls];
       for(argAttr in 1:(length(x) - 1) ) {
-        if( !is.na(x[[argAttr]]) ) {
+        ## if argAttr is missing or it's value didn't occur in trainig data - skip
+        if( !is.na(x[[argAttr]]) && (att1ValIdx = attValIdx(x[[argAttr]], object$attributes[[argAttr]] ) ) > 0  ) {
           parents = object$parents[[argAttr]]
-          att1ValIdx = attValIdx(x[[argAttr]], object$attributes[[argAttr]] )
 
           if(length(parents) == 1) {
-            probabilities = object$conditionalProbabilities[[argAttr]][,cls]
+            probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls]
           } else if(length(parents) == 2) {
-            if( !is.na(x[[ parents[2] ]]) ) {
-              att2ValIdx = attValIdx( x[[ parents[2] ]], object$attributes[[ parents[2] ]] )
-            } else {
+            ## if parent[2] is missing or it's value didn't occur in training data - apply i
+            if( is.na(x[[ parents[2] ]]) || (att2ValIdx = attValIdx( x[[ parents[2] ]], object$attributes[[ parents[2] ]]) ) == 0) {
               att2ValIdx = attValIdx( object$modes[[ parents[2] ]], object$attributes[[ parents[2] ]] )
             }
 
-            # There was no conditional attribute with that value in training data
-            if (att2ValIdx > 0) {
-              probabilities = object$conditionalProbabilities[[argAttr]][,cls,att2ValIdx];
-            } else if (!is.null(dim(object$conditionalProbabilities[[argAttr]][,cls,]))) {
-              probabilities = apply(object$conditionalProbabilities[[argAttr]][,cls,], 1, max)
-            } else {
-              probabilities = object$conditionalProbabilities[[argAttr]][,cls,]
-            }
+            probability = probability * object$conditionalProbabilities[[argAttr]][att1ValIdx,cls,att2ValIdx]
           } else {
             stop("ERROR")
           }
 
-          # There was no such attribute with that value in training data
-          if (att1ValIdx > 0) {
-            attrProb = probabilities[att1ValIdx];
-          } else {
-            attrProb = max(probabilities);
-          }
-
-          probability = probability * attrProb;
         }
       }
       classProb = c(classProb, probability)
