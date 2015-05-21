@@ -11,7 +11,7 @@ require(e1071)
 #       0         22     2
 #       1          1     8
 
-data = readData(10);
+data = readData(s=200, attributes=5);
 dataTrain <- data$dataTrain
 dataTest <- data$dataTest
 
