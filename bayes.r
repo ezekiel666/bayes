@@ -19,20 +19,30 @@ x <- dataTrain[,-which(names(dataTrain) %in% c("spam"))]
 y <- dataTrain$spam
 z <- dataTest[,-which(names(dataTest) %in% c("spam"))]
 
-modelNaive = naiveBayes(x,y)
-predictedClassNaive = predict(modelNaive, z, type = "class")
+modelNaive = naiveBayes(x,y);
+predictedClassNaive = predict(modelNaive, z, type = "class");
 # For probabilities
-#predictedRawNaive = predict(modelNaive, z, type = "raw")
-comparsionNaive <- table(predictedClassNaive, dataTest$spam)
+#predictedRawNaive = predict(modelNaive, z, type = "raw");
+comparsionNaive <- table(predictedClassNaive, dataTest$spam);
+resultsNaive <- calculateResults(comparsionNaive);
 
-modelAODE = aode(x,y)
-predictedClassAODE = predict(modelAODE, z, type = "class")
+modelAODE = aode(x,y);
+predictedClassAODE = predict(modelAODE, z, type = "class");
 # For probabilities
-# predictedRawAODE = predict(modelAODE, z, type = "raw")
-comparsionAODE <- table(predictedClassAODE, dataTest$spam)
+# predictedRawAODE = predict(modelAODE, z, type = "raw");
+comparsionAODE <- table(predictedClassAODE, dataTest$spam);
+resultsAODE <- calculateResults(comparsionAODE);
 
-modelTAN = tan(dataTrain)
-predictedClassTAN = predict(modelTAN, dataTest, type = "class")
+modelTAN = tan(dataTrain);
+predictedClassTAN = predict(modelTAN, dataTest, type = "class");
 # For probabilities
-# predictedRawTAN = predict(modelTAN, dataTest, type = "raw")
-comparsionTAN <- table(predictedClassTAN, dataTest$spam)
+# predictedRawTAN = predict(modelTAN, dataTest, type = "raw");
+comparsionTAN <- table(predictedClassTAN, dataTest$spam);
+resultsTAN <- calculateResults(comparsionTAN);
+
+plotsNr = length(names(resultsNaive));
+if (plotsNr %% 2 != 0) {
+  plotsNr = plotsNr + 1;
+}
+layout(matrix(1:plotsNr, plotsNr/2, 2, byrow = TRUE))
+barplotDataFram(resultsAODE, resultsNaive, resultsTAN, names.arg=c("AODE", "Naive", "TAN"))

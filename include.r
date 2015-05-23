@@ -108,3 +108,60 @@ Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
+
+calculateResults <- function(predictionTable) {
+  ff <- predictionTable[1,1];
+  tf <- predictionTable[2,1];
+  ft <- predictionTable[1,2];
+  tt <- predictionTable[2,2];
+
+  result <- data.frame(
+  "accuracy" = (tt + ff) / (ff + tf + ft +tt),
+  "error" = (tf + ft) / (ff + tf + ft +tt),
+  "precision" = (tt) / (ft + tt),
+  "sensitivity" = (tt) / (tf + tt),
+  "falseNegativeRate" = (tf) / (tf + tt));
+  return (result);
+}
+
+barplotDataFram <- function(..., names.arg = c()) {
+  input_list = list(...);
+  if (length(input_list) < 1) {
+    return ();
+  }
+
+  argsNames = sapply(as.list(substitute(list(...)))[-1L], deparse);
+  if (length(names.arg) > 0) {
+    for (i in 1:length(names.arg)) {
+      argsNames[i] = names.arg[i];
+    }
+  }
+
+  namesList = names(input_list[[1]]);
+  for (i in 2:length(input_list)) {
+    if (!identical(namesList, names(input_list[[i]]))) {
+      stop("Objects need to have the same attributes");
+    }
+  }
+
+  sapply(namesList, FUN=function(attribute) {
+    values = sapply(input_list, FUN=function(frame) { frame[attribute][[1]]; });
+    maxVal = max(values);
+    labels = argsNames;
+    colors = rep("gray", length(labels));
+    for (i in 1:length(labels)) {
+      if (values[i] >= maxVal) {
+        labels[i] = eval(substitute(expression(bold(A)), list(A=labels[i])));
+        colors[i] = "red";
+      }
+    }
+
+    plot = barplot(height = values,
+          names.arg = labels,
+          main = attribute,
+          col=colors,
+          ylim=c(0,1));
+    text(plot, 0, round(values, 3),cex=1,pos=3)
+  });
+  return ();
+}
