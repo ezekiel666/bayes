@@ -97,44 +97,48 @@ predict.aode <- function(model, newdata, type = c("class", "raw"), m=1, ...) {
   type <- match.arg(type) #matches against specified arguments
   df <- as.data.frame(newdata) #to match names
   attribs <- match(names(model$tables1), names(df)) #vector of the positions of (first) matches of its first argument in its second
-  attribs <- attribs[!is.na(attribs)]
-
+  
   L <- sapply(1:nrow(newdata), function(i) {
     ndata <- newdata[i, ]
     #logarithm cannot be applied, because of sum (it makes computations more numerically unstable)
     #we compute in rows for each class
     L <- apply(sapply(seq_along(attribs),
-      function(v) {
-        a_v <- attribs[v]
-        nd_v <- as.character(ndata[[a_v]])
-        if(is.na(nd_v)) {
-          #it's missing value in test set
+      function(v) {        
+        a_v <- attribs[v]        
+        if(is.na(a_v)) {
+          #attribute is missing in test set
           rep(0, length(model$levels))
         } else {
-          freq_v <- model$vfreq[[a_v]][nd_v]
-          if(is.na(freq_v) || freq_v < m) {
-            #it's missing value in training set or freq_v is under the limit
+          nd_v <- as.character(ndata[[a_v]])
+          if(is.na(nd_v)) {
+            #it's missing value in test set
             rep(0, length(model$levels))
           } else {
-            model$tables1[[a_v]][,nd_v] * apply(sapply(seq_along(attribs),
-              function(u) {
-                a_u <- attribs[u]
-                nd_u <- as.character(ndata[[a_u]])
-                if(is.na(nd_u)) {
-                  #it's missing value in test set
-                  rep(0, length(model$levels))
-                } else {
-                  freq_u <- model$vfreq[[a_u]][nd_u]
-                  if(is.na(freq_u)) {
-                    #it's missing value in training set
-                    lc <- model$laplace / model$laplace * length(model$vfreq[[a_u]])
-                    if(is.na(lc)) { lc = 0 }
-                    rep(lc, length(model$levels)) #we smoothe here!
+            freq_v <- model$vfreq[[v]][nd_v]
+            if(is.na(freq_v) || freq_v < m) {
+              #it's missing value in training set or freq_v is under the limit
+              rep(0, length(model$levels))
+            } else {
+              model$tables1[[v]][,nd_v] * apply(sapply(seq_along(attribs),
+                function(u) {
+                  a_u <- attribs[u]
+                  nd_u <- as.character(ndata[[a_u]])
+                  if(is.na(nd_u)) {
+                    #it's missing value in test set
+                    rep(0, length(model$levels))
                   } else {
-                    model$tables2[[a_v]][[a_u]][nd_v,nd_u,]
+                    freq_u <- model$vfreq[[u]][nd_u]
+                    if(is.na(freq_u)) {
+                      #it's missing value in training set
+                      lc <- model$laplace / model$laplace * length(model$vfreq[[u]])
+                      if(is.na(lc)) { lc = 0 }
+                      rep(lc, length(model$levels)) #we smoothe here!
+                    } else {
+                      model$tables2[[v]][[u]][nd_v,nd_u,]
+                    }
                   }
-                }
-              }),1,prod)
+                }),1,prod)
+            }
           }
         }
       }),1,sum)

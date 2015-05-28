@@ -2,7 +2,8 @@ source("include.r")
 source("aode.r")
 source("tan.r")
 
-require(e1071)
+source("naiveBayes.r")
+#require(e1071)
 #install.packages("e1071", dep = TRUE)
 
 # Predicted table:

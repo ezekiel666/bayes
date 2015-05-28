@@ -1,5 +1,6 @@
 source("include.r")
 require(ape)
+#install.packages("ape", dep = TRUE)
 
 tan = function(x, ...)
   UseMethod("tan")

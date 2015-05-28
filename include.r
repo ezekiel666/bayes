@@ -82,7 +82,7 @@ readData <- function(s=0, supervised=FALSE, maxValues = 10, reduce=TRUE, attribu
     s = nrow(dataset);
   }
 
-  #split 0.7/0.3 keeping $spam distribution
+  #split 0.7/0.3
   split = sample(2, size = s, replace=TRUE, prob = c(0.7,0.3))
   dataTrain <- dataset[split==1,]
   dataTest  <- dataset[split==2,]
