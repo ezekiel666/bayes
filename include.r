@@ -55,7 +55,7 @@ attributeReduction <- function(data, attributes=0) {
 }
 
 #reads spambase data and makes preprocessing
-readData <- function(s=0, supervised=FALSE, maxValues = 10, reduce=TRUE, attributes=30) {
+readData <- function(s=0, supervised=FALSE, maxValues = 10, reduce=TRUE, attributes=30, CV = 3) {
   dataset <- read.csv("spambase/spambase.data",header=FALSE,sep=",")
   names <- read.csv("spambase/names",header=FALSE,sep=",")
   names(dataset) <- sapply((1:nrow(names)),function(i) toString(names[i,1]))
@@ -77,16 +77,30 @@ readData <- function(s=0, supervised=FALSE, maxValues = 10, reduce=TRUE, attribu
   dataset$spam <- as.factor(dataset$spam) # encode spam vector as factor (category)
 
   if (s > 0) {
-    dataset <- dataset[sample(nrow(dataset), s),];
+    datasetNoSpam = subset(dataset, spam==0);
+    datasetSpam = subset(dataset, spam==1);
+    noSpamSample = round(s * (nrow(datasetNoSpam)/(nrow(datasetSpam) + nrow(datasetNoSpam))));
+    spamSample = round(s * (nrow(datasetSpam)/(nrow(datasetSpam) + nrow(datasetNoSpam))));
+    datasetNoSpam <- datasetNoSpam[sample(nrow(datasetNoSpam), noSpamSample),];
+    datasetSpam <- datasetSpam[sample(nrow(datasetSpam), spamSample),];
+    dataset <- rbind(datasetNoSpam, datasetSpam);
   } else {
     s = nrow(dataset);
   }
 
-  #split 0.7/0.3
-  split = sample(2, size = s, replace=TRUE, prob = c(0.7,0.3))
-  dataTrain <- dataset[split==1,]
-  dataTest  <- dataset[split==2,]
-  list(dataTrain = dataTrain, dataTest = dataTest)
+  if (CV > 2) {
+    vec <- list();
+    split = sample(CV, size = s, replace=TRUE);
+    for (i in 1:CV) {
+      vec[[i]] <- list(dataTrain = dataset[split!=i,], dataTest = dataset[split==i,]);
+    }
+    return (vec);
+  } else {
+    split = sample(2, size = s, replace=TRUE, prob = c(0.7,0.3));
+    dataTrain <- dataset[split==1,];
+    dataTest  <- dataset[split==2,];
+    return (list(list(dataTrain = dataTrain, dataTest = dataTest)));
+  }
 }
 
 #computes given function for each pair of matrix column
@@ -109,22 +123,29 @@ Mode <- function(x) {
   ux[which.max(tabulate(match(x, ux)))]
 }
 
-calculateResults <- function(predictionTable) {
+addCalculatedResults <- function(predictionTable, oldResults=NULL) {
   ff <- predictionTable[1,1];
   tf <- predictionTable[2,1];
   ft <- predictionTable[1,2];
   tt <- predictionTable[2,2];
 
+
   result <- data.frame(
-  "accuracy" = (tt + ff) / (ff + tf + ft +tt),
-  "error" = (tf + ft) / (ff + tf + ft +tt),
-  "precision" = (tt) / (ft + tt),
-  "sensitivity" = (tt) / (tf + tt),
-  "falseNegativeRate" = (tf) / (tf + tt));
+    "accuracy" = (tt + ff) / (ff + tf + ft +tt),
+    "error" = (tf + ft) / (ff + tf + ft +tt),
+    "precision" = (tt) / (ft + tt),
+    "sensitivity" = (tt) / (tf + tt),
+    "falseNegativeRate" = (tf) / (tf + tt));
+
+  if (!is.null(oldResults)) {
+    for (att in names(result)) {
+      result[att] <- oldResults[att] + result[att];
+    }
+  }
   return (result);
 }
 
-barplotDataFram <- function(..., names.arg = c()) {
+barplotDataFrame <- function(..., names.arg = c()) {
   input_list = list(...);
   if (length(input_list) < 1) {
     return ();
