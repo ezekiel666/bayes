@@ -1,0 +1,15 @@
+Package: bayes
+Type: Package
+Title: What the package does (short line)
+Version: 1.0
+Date: 2015-05-28
+Authors@R: c(
+    person("Michał", "Dębski", email = "M.Z.Debski@stud.elka.pw.edu.pl", role = "cre"),
+    person("Cezary", "Pawłowski", email = "czarekpawlowski@gmail.com", role = "cre"),
+    person("Przemysław", "Piórkowski", email = "P.Piorkowski@stud.elka.pw.edu.pl", role = "cre"))
+Maintainer: Who to complain to <yourfault@somewhere.net>
+Description: More about what it does (maybe more than one line)
+License: What license is it under?
+Encoding: UTF-8
+Imports: 
+    ape
