@@ -1,53 +1,56 @@
 \name{tan}
 \alias{tan}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 TAN
 }
 \description{
-Tree Augumented Naive Bayes algorithm implementation.
+Klasyfikator wzmocnionych drzew Bayesa(ang. Tree Augmented Naive Bayes) swoje
+działanie opiera na koncepcji sieci Bayesa. Sieć Bayesa jest graficznym modelem 
+reprezentującym zbiór zmiennych losowych oraz prawdopodobieństw warunkowych 
+zachodzących pomiędzy tymi zmiennymi przy pomocy acyklicznego grafu 
+skierowanego. Ideą wprowadzaną przez TAN jest chęć odkrycia warunkowych 
+prawdopodobieństw pomiędzy atrybutami za pomocą sieci Bayesa i wykorzystania 
+tych zależności w celu poprawy jakości klasyfikacji.
 }
 \usage{
-tan(data, ...)
+\method{tan}{tan}(data, \dots)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{data}{
-    Dataset representing training data. It's assumed that last column in data set alwayes denotes class.
+Zestaw danych dla którego ma zostać wykonana faza uczenia algorytmu TAN. 
+Zostało poczynione założenie, które oczekuje, że we wprowadzanym zbiorze danych
+ostatni atrybut reprezentuje klasę.
 }
   \item{\dots}{
-    Further arguments.
+Inne arguemnty
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+Bardzo ważne jest aby pamiętać o tym, że ostatni atrybut w przekazywanych danych
+musi reprezentować klasę. W innym przypadku działanie algorytmu będzie błędne.
 }
 \value{
-    \item{attributes }{Information about attributes in training dataset.}
-    \item{parents }{Structure which represents created Bayes network.}
-    \item{conditionalProbabilities }{Values of all possible conditional probabilities.}
-    \item{modes }{Mode of each attribute values.}
+    \item{attributes}{Informacje o atrybutach oraz ich wartościach, które 
+    znajdują się w trenującym zbiorze danych.}
+    \item{parents}{Lista reprezentująca rodziców każdego atrbutu w stworzonej
+    sieci Bayesa.}
+    \item{conditionalProbabilities}{Lista zawierająca nauczone w fazie
+    trenowania prawdopodobieństwa warunkowe.}
+    \item{modes}{Lista zawierająca mode wartości każdego z atrybutów 
+    znajdujących się w zbiorze trenującym.}
 }
 \references{
-%% ~put references to the literature/web site here ~
 }
 \author{
 }
 \note{
-%%  ~~further notes~~
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{predict.tan}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+data = readData(s = 5, CV = 1, attributes = 10)
+dataTrain = data[[1]]$dataTrain
+model = tan(dataTrain)
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{methods}

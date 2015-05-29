@@ -1,61 +1,52 @@
 \name{predict.tan}
 \alias{predict.tan}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-title%%  ~~function to do ... ~~
+TAN
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Metoda wykonująca predykcje na nowych danych przy użyciu modelu uzyskanego
+podczas wcześniej przeprowadzonej fazy trenującej.
 }
 \usage{
 predict.tan(object, newdata, type = c("class", "raw"), ...)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{object}{
-%%     ~~Describe \code{object} here~~
+objekt klasy "tan"
 }
   \item{newdata}{
-%%     ~~Describe \code{newdata} here~~
+Dane dla których ma zostać przeprowadzona predykcja. Kolejność atrybutów musi
+odpowiadać atrybutom ze zbioru trenującego. Kolumna zawierająca klasę może 
+zostać pominięta.
 }
   \item{type}{
-%%     ~~Describe \code{type} here~~
+Wynik jaki ma zostać zwrócony dla każdego przykładu. "raw" spowoduje zwrócenie
+prawdopodobieństwa dla każdej z klas, "class" zwróci klasę najbardziej 
+prawdopodobną.
 }
   \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+Pozostałe argumenty.
 }
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+Jeśli type = "class" to zostanie zwrócona tablica klas.
+Jeśli type = "raw" to zostanie zwrócona tablica retVal. Każdy element tablicy to
+lista zawierająca prawdopodobieństwa każdej z klas.
 }
 \references{
-%% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
 }
 \note{
-%%  ~~further notes~~
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{tan}}
+\code{\link{bayes}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+data = readData(s = 5, CV = 1, attributes = 10)
+model = tan(data[[1]]$dataTrain)
+predicted_class = predict(model, data[[1]]$dataTest, type = "class")
+predicted_raw = predict(model, data[[1]]$dataTest, type = "raw")
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ method }

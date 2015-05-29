@@ -3,12 +3,12 @@
 \alias{bayes}
 \docType{package}
 \title{
-Bayes
+Bayes - pakiet stworzony w ramach zaliczenia projektu z przedmiotu MOW.
 }
 \description{
-Implementation of standard Naive Bayes Classificator and two modifications : AODE, TAN.
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
+Implementacja standardowego klasyfikatora Bayesowskiego oraz dwóch jego
+modyfikacji : AODE(ang. Averaged One-Dependence Estimators), TAN(ang. Tree 
+Augmented Naive Bayes).
 }
 \details{
 \tabular{ll}{
@@ -16,27 +16,16 @@ Package: \tab bayes\cr
 Type: \tab Package\cr
 Version: \tab 1.0\cr
 Date: \tab 2015-05-28\cr
-License: \tab What license is it under?\cr
+License: \tab MIT\cr
 }
-~~ An overview of how to use the package, including the most important functions ~~
 }
 \author{
-Who wrote it
-
-Maintainer: Who to complain to <yourfault@somewhere.net>
-~~ The author and/or maintainer of the package ~~
+Michał Dębski, Cezary Pawłowski, Przemysław Piórkowski
 }
 \references{
-~~ Literature or other references for background information ~~
+
 }
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in the R documentation ~~
-~~ directory ~~
 \keyword{ package }
-\seealso{
-~~ Optional links to other man pages, e.g. ~~
-~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
-}
 \examples{
     install.packages("/path/to/package/bayes_1.0.tar.gz", repos = NULL, type="source")
-    #bayes::performResearch()
 }

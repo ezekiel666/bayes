@@ -168,7 +168,7 @@ tan.default = function(data, ...) {
     }
   }
 
-  maximalSpanningTree = mst(apply(mutualInformationMatrix, 1:2, function(x) {
+  maximalSpanningTree = ape::mst(apply(mutualInformationMatrix, 1:2, function(x) {
     if(x>=0)
       return(1/(1+x))
     else
@@ -202,7 +202,7 @@ predict.tan = function(object, newdata, type = c("class","raw"), ...) {
     for(cls in 1:length(object$attributes[[length(object$attributes)]]) ) { ## for each class value
 
       probability = object$conditionalProbabilities[[length(object$attributes)]][cls];
-      for(argAttr in 1:(length(x) - 1) ) {
+      for(argAttr in 1:(length(object$attributes) - 1) ) {
         ## if argAttr is missing or it's value didn't occur in trainig data - skip
         if( !is.na(x[[argAttr]]) && (att1ValIdx = attValIdx(x[[argAttr]], object$attributes[[argAttr]] ) ) > 0  ) {
           parents = object$parents[[argAttr]]
