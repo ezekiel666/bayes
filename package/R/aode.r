@@ -1,5 +1,3 @@
-#source("include.r")
-
 #based on e1071::naiveBayes
 
 #it treats numeric values as discrete

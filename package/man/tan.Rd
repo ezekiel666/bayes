@@ -52,5 +52,6 @@ musi reprezentować klasę. W innym przypadku działanie algorytmu będzie błę
 data = readData(s = 5, CV = 1, attributes = 10)
 dataTrain = data[[1]]$dataTrain
 model = tan(dataTrain)
+print(model)
 }
 \keyword{methods}

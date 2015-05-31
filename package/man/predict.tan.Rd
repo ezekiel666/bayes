@@ -8,7 +8,7 @@ Metoda wykonująca predykcje na nowych danych przy użyciu modelu uzyskanego
 podczas wcześniej przeprowadzonej fazy trenującej.
 }
 \usage{
-predict.tan(object, newdata, type = c("class", "raw"), ...)
+\method{tan}{predict}(object, newdata, type = c("class", "raw"), \dots)
 }
 \arguments{
   \item{object}{

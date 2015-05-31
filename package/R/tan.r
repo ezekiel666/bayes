@@ -185,6 +185,22 @@ tan.default = function(data, ...) {
             class="tan")
 }
 
+print.tan <- function(object, ...) {
+    cat("\nTAN\n\n")
+
+    cat("\nAttributes\n")
+    print(object$attributes)
+
+    cat("\nParents\n")
+    print(object$parents)
+
+    cat("\nConditional Probabilities\n")
+    print(object$conditionalProbabilities)
+
+    cat("\nModes\n")
+    print(object$modes)
+}
+
 predict.tan = function(object, newdata, type = c("class","raw"), ...) {
   attValIdx = function(attVal, attArray) {
     idx = 0
