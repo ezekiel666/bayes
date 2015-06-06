@@ -35,8 +35,8 @@ attributeReduction <- function(data, attributes=0) {
   pc <- prcomp(data[1:(ncol(data)-1)], center = TRUE, scale = FALSE)
 
   if (attributes < 1) {
-    # Find attribute which cummulative variance
-    # except with it takes 3 attributes for spam and that's bad
+    # Find attribute which cummulative variance is above 99.9%.
+    # Except it takes 3 attributes for spam data and that's bad...
     cum = cumsum(pr$sdev^2/sum(pr$sdev^2));
     attributes = 1;
     for (i in 2:length(cum)) {

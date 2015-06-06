@@ -2,10 +2,10 @@
 \alias{attributeReduction}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-title%%  ~~function to do ... ~~
+Redukcja atrybutów.
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Atrybuty zostaną zredukowane przy użyciu funkcji prcomp, dla których skumulowana wariancja jest większa niż 99.9\%.
 }
 \usage{
 attributeReduction(data, attributes = 0)
@@ -13,21 +13,17 @@ attributeReduction(data, attributes = 0)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{data}{
-%%     ~~Describe \code{data} here~~
+Dane, które mają zostać zredukowane.
 }
   \item{attributes}{
-%%     ~~Describe \code{attributes} here~~
+Liczba atrybutów, która ma zostać utworzona, zamiast użycia skumulowanej wariancji.
 }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+Dane ze zmniejszoną liczbą atrybutów.
 }
 \references{
 %% ~put references to the literature/web site here ~

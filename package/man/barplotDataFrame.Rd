@@ -2,10 +2,10 @@
 \alias{barplotDataFrame}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-title%%  ~~function to do ... ~~
+Rysowanie wykresów dla data.frame
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Dla każdego atrybutu z danych, zostanie narysowany wykres słupkowy. Największa wartość zostanie zaznaczona na czerwono.
 }
 \usage{
 barplotDataFrame(..., names.arg = c())
@@ -13,10 +13,10 @@ barplotDataFrame(..., names.arg = c())
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+Dane do narysowania, muszą mieć taką samą liczbę i nazwy atrybutów.
 }
   \item{names.arg}{
-%%     ~~Describe \code{names.arg} here~~
+Nazwy danych, które zostaną użytę zamiast nazw zmiennych przy podpisach kolumn.
 }
 }
 \details{

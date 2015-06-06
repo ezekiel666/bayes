@@ -2,10 +2,10 @@
 \alias{addCalculatedResults}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-title
+Dodaj wyniki
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Dodaje wyliczone wyniki do poprzednich wyników, jeżeli poprzedni wynik jest NULLem, zwraca same wyniki.
 }
 \usage{
 addCalculatedResults(predictionTable, oldResults = NULL)
@@ -13,21 +13,21 @@ addCalculatedResults(predictionTable, oldResults = NULL)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{predictionTable}{
-%%     ~~Describe \code{predictionTable} here~~
+Tablica z przwidzianymi klasami.
 }
   \item{oldResults}{
-%%     ~~Describe \code{oldResults} here~~
+Wyniki, do których zostaną dodane wyliczone wyniki.
 }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+  \item{accuracy }{(tt + ff) / (ff + tf + ft +tt)}
+  \item{error }{(tf + ft) / (ff + tf + ft +tt)}
+  \item{precision }{(tt) / (ft + tt)}
+  \item{sensitivity }{(tt) / (tf + tt)}
+  \item{falseNegativeRate }{(tf) / (tf + tt)}
 }
 \references{
 %% ~put references to the literature/web site here ~

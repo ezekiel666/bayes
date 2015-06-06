@@ -2,10 +2,10 @@
 \alias{discretizate}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-title%%  ~~function to do ... ~~
+Dyskretyzacja według równej częstości
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Dany wektor zostatnie zdysretyzowany według częstości do podan liczby wartości.
 }
 \usage{
 discretizate(data, maxValues = 10)
@@ -13,21 +13,17 @@ discretizate(data, maxValues = 10)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{data}{
-%%     ~~Describe \code{data} here~~
+Wektor do dyskretyzacji.
 }
   \item{maxValues}{
-%%     ~~Describe \code{maxValues} here~~
+Maksymalna liczba przedziałów.
 }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+Zdyskretyzowany wektor, który ma maxymalnie maxValues przedziałów.
 }
 \references{
 %% ~put references to the literature/web site here ~
@@ -36,7 +32,7 @@ discretizate(data, maxValues = 10)
 %%  ~~who you are~~
 }
 \note{
-%%  ~~further notes~~
+maxValues oznaczy tylko maksymalną liczbę przedziałów, jeżeli istnieje wartość, która zajmie więcej niż jeden przedział, wynikowa liczba dyskretnych wartości będzie mniejsza.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~

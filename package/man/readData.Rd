@@ -2,10 +2,10 @@
 \alias{readData}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-title%%  ~~function to do ... ~~
+Ładowanie danych
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Zostaną załadowane dane SPAM i zostaną wyknonane operacje przygotowawcze.
 }
 \usage{
 readData(s = 0, supervised = FALSE, maxValues = 10, reduce = TRUE, attributes = 30, CV = 3)
@@ -13,22 +13,22 @@ readData(s = 0, supervised = FALSE, maxValues = 10, reduce = TRUE, attributes = 
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{s}{
-%%     ~~Describe \code{s} here~~
+Liczba próbek do pobrania z danych, jeżeli nie potrzeba całych danych. 0 oznacza pobranie całego zestawu danych. Spróbkowane dane będą według rozkładu klasy, ale nie atrybutów.
 }
   \item{supervised}{
-%%     ~~Describe \code{supervised} here~~
+Czy dykretyzacja ma być z nadzorem. Trwa to o wiele dłużej.
 }
   \item{maxValues}{
-%%     ~~Describe \code{maxValues} here~~
+Maksymalna liczba przedziałów do dyskretyzacji, brak efektu przy dyskretyzacji z nadzorem.
 }
   \item{reduce}{
-%%     ~~Describe \code{reduce} here~~
+Czy ma nastąpić redukcja atrybutów.
 }
   \item{attributes}{
-%%     ~~Describe \code{attributes} here~~
+Liczba atrybutów, które mają pozostać po redukcji. 0 aby dokonać automatycznej redukcji atrybutów.
 }
   \item{CV}{
-%%     ~~Describe \code{CV} here~~
+Liczba kros walidacji do których maja zostać przygotowane dane. Zostane one podzielone na tyle przedziałów i następnie do każdej wartości zostanie wybrany inna część jako dane testujące.
 }
 }
 \details{
